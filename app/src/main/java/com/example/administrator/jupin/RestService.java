@@ -12,14 +12,13 @@ import android.util.Log;
 //import com.menda.dayijr.util.NetworkUtils;
 //import com.menda.dayijr.util.UIUtils;
 
+import com.example.administrator.jupin.model.BizResult;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 
-import okhttp3.HttpUrl;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Response;

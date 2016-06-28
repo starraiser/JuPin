@@ -1,4 +1,4 @@
-package com.example.administrator.jupin;
+package com.example.administrator.jupin.model;
 
 
 import java.util.List;
