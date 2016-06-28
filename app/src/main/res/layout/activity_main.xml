@@ -143,14 +143,14 @@
         android:id="@+id/dropDownMenu"
         android:layout_below="@id/filter"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="match_parent"
         app:ddmenuTextSize="13sp"
     app:ddtextUnselectedColor="@color/drop_down_unselected"
     app:ddtextSelectedColor="@color/drop_down_selected"
     app:dddividerColor="@color/gray"
     app:ddunderlineColor="@color/gray"
-    app:ddmenuSelectedIcon="@mipmap/down_arrow_ic"
-    app:ddmenuUnselectedIcon="@mipmap/down_arrow_2_ic"
+    app:ddmenuSelectedIcon="@mipmap/down_arrow_2_ic"
+    app:ddmenuUnselectedIcon="@mipmap/down_arrow_ic"
     app:ddmaskColor="@color/mask_color"
     app:ddmenuBackgroundColor="@color/white"
     />
@@ -160,21 +160,21 @@
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
         android:background="#7e7e7e"/>
-    <ScrollView
-        android:layout_below="@id/line"
-        android:id="@+id/scrollView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FFFFFF">
-        <ListView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"></ListView>
-    </ScrollView>
-    <View
-        android:id="@+id/mask"
-        android:visibility="gone"
-        android:layout_below="@id/line"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#C0000000" />
+    <!--<ScrollView-->
+        <!--android:layout_below="@id/line"-->
+        <!--android:id="@+id/scrollView"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="#FFFFFF">-->
+        <!--<ListView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"></ListView>-->
+    <!--</ScrollView>-->
+    <!--<View-->
+        <!--android:id="@+id/mask"-->
+        <!--android:visibility="gone"-->
+        <!--android:layout_below="@id/line"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="#C0000000" />-->
 </RelativeLayout>

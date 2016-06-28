@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int[] location = new int[2];
 
-    private String headers[] = {"城市","age","sex","star"};
+    private String headers[] = {"全部活动","距离","时间","star"};
     private String citys[] = {"不限", "武汉", "北京", "上海", "成都", "广州", "深圳", "重庆", "天津", "西安", "南京", "杭州"};
     private String ages[] = {"不限", "18岁以下", "18-22岁", "23-26岁", "27-35岁", "35岁以上"};
     private String sexs[] = {"不限", "男", "女"};
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         choose_dis = (RelativeLayout)findViewById(R.id.choose_dis);
         choose_time = (RelativeLayout)findViewById(R.id.choose_time);
 
-        mask = (View)findViewById(R.id.mask);
+        //mask = (View)findViewById(R.id.mask);
 
         choose_type.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -386,11 +386,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //init context view
-        TextView contentView = new TextView(this);
+        ListView contentView = new ListView(this);
         contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        contentView.setText("内容显示区域");
-        contentView.setGravity(Gravity.CENTER);
-        contentView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+//        contentView.setText("内容显示区域");
+//        contentView.setGravity(Gravity.CENTER);
+//        contentView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+
 
         //init dropdownview
         mDropDownMenu.setDropDownMenu(Arrays.asList(headers), popupViews, contentView);
