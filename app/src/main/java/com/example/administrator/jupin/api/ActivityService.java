@@ -20,7 +20,13 @@ public interface ActivityService {
      */
     @FormUrlEncoded
     @POST("actApp/specialIndex.app")
-    Call<ActivityIndexModel> activity(@Field("longitude")float longitude, @Field("latitude")float latitude, @Field("startPage")int startPage, @Field("pageSize")int pageSize);
+    Call<ActivityIndexModel> activity(@Field("longitude")float longitude,
+                                      @Field("latitude")float latitude,
+                                      @Field("startPage")int startPage,
+                                      @Field("pageSize")int pageSize,
+                                      @Field("actType")String actType,
+                                      @Field("distance")String distance,
+                                      @Field("time")String time);
 
     /**
      * 活动主页

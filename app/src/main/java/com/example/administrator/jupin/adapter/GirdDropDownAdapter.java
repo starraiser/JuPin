@@ -1,12 +1,16 @@
-package com.example.administrator.jupin;
+package com.example.administrator.jupin.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+
+import com.example.administrator.jupin.R;
 
 import java.util.List;
 
@@ -18,13 +22,15 @@ public class GirdDropDownAdapter extends BaseAdapter {
     private Context context;
     private List<String> list;
     private int checkItemPosition = 0;
+    private ScreenCallback callback;
 
     public void setCheckItem(int position) {
         checkItemPosition = position;
         notifyDataSetChanged();
     }
 
-    public GirdDropDownAdapter(Context context, List<String> list) {
+    public GirdDropDownAdapter(Context context, List<String> list,ScreenCallback callback) {
+        this.callback = callback;
         this.context = context;
         this.list = list;
     }
@@ -45,8 +51,8 @@ public class GirdDropDownAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder viewHolder;
+    public View getView(final int position, View convertView, ViewGroup parent) {
+        final ViewHolder viewHolder;
         if (convertView != null) {
             viewHolder = (ViewHolder) convertView.getTag();
         } else {
@@ -55,18 +61,32 @@ public class GirdDropDownAdapter extends BaseAdapter {
             convertView.setTag(viewHolder);
         }
         viewHolder.mText = (TextView)convertView.findViewById(R.id.text);
+        viewHolder.tick = (ImageView)convertView.findViewById(R.id.tick);
+        viewHolder.mText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                callback.onClick(viewHolder.mText.getText().toString());
+                setCheckItem(position);
+            }
+        });
         fillValue(position, viewHolder);
         return convertView;
     }
 
-    private void fillValue(int position, ViewHolder viewHolder) {
+    private void fillValue(int position, final ViewHolder viewHolder) {
         viewHolder.mText.setText(list.get(position));
         if (checkItemPosition != -1) {
             if (checkItemPosition == position) {
-                viewHolder.mText.setTextColor(context.getResources().getColor(R.color.drop_down_selected));
+                //viewHolder.mText.setTextColor(context.getResources().getColor(R.color.drop_down_selected));
+                viewHolder.mText.setTextColor(Color.parseColor("#00dd00"));
+                //callback.onClick(viewHolder.mText.getText().toString());
+                //viewHolder.mText.setTextColor(context.getResources().getColor(R.color.drop_down_selected));
+                viewHolder.tick.setVisibility(View.VISIBLE);
                 //viewHolder.mText.setCompoundDrawablesWithIntrinsicBounds(null, null, context.getResources().getDrawable(R.mipmap.drop_down_checked), null);
             } else {
-                viewHolder.mText.setTextColor(context.getResources().getColor(R.color.drop_down_unselected));
+                viewHolder.tick.setVisibility(View.INVISIBLE);
+                //viewHolder.mText.setTextColor(context.getResources().getColor(R.color.drop_down_unselected));
+                viewHolder.mText.setTextColor(Color.parseColor("#000000"));
                 viewHolder.mText.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
             }
         }
@@ -75,5 +95,10 @@ public class GirdDropDownAdapter extends BaseAdapter {
     static class ViewHolder {
 
         TextView mText;
+        ImageView tick;
+    }
+
+    public interface ScreenCallback{
+        void onClick(String str);
     }
 }

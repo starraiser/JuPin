@@ -6,8 +6,8 @@ import java.util.List;
  * Created by hasee on 2016/6/28.
  */
 public class ActivityIndexModel {
-    private String statecode;
-    private List<Act> data;
+    public String statecode;
+    public List<Act> data;
 
     public List<Act> getData() {
         return data;

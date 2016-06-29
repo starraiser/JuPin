@@ -1,4 +1,4 @@
-package com.example.administrator.jupin;
+package com.example.administrator.jupin.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.administrator.jupin.R;
 
 import java.util.List;
 
@@ -44,7 +46,6 @@ public class FilterAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        System.out.println(flag);
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.pop_single_group, null);
         }
