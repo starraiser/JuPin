@@ -47,9 +47,9 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
     private String time[] = {"不限", "3天以内", "5天以内","7天以内"};
 
     //筛选菜单适配器
-    private GirdDropDownAdapter cityAdapter;
-    private DistanceAdapter ageAdapter;
-    private TimeAdapter sexAdapter;
+    private GirdDropDownAdapter typeAdapter;
+    private DistanceAdapter distanceAdapter;
+    private TimeAdapter timeAdapter;
 
     private DropDownMenu mDropDownMenu;
 
@@ -184,53 +184,53 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
     private void initView() {
         mDropDownMenu = (DropDownMenu)findViewById(R.id.dropDownMenu);
-        //init city menu
-        final ListView cityView = new ListView(this);
-        cityAdapter = new GirdDropDownAdapter(this, Arrays.asList(activities),this);
-        cityView.setDividerHeight(0);
-        cityView.setAdapter(cityAdapter);
+        //init type menu
+        final ListView typeView = new ListView(this);
+        typeAdapter = new GirdDropDownAdapter(this, Arrays.asList(activities),this);
+        typeView.setDividerHeight(0);
+        typeView.setAdapter(typeAdapter);
 
-        //init age menu
-        final ListView ageView = new ListView(this);
-        ageView.setDividerHeight(0);
-        ageAdapter = new DistanceAdapter(this, Arrays.asList(distance),this);
-        ageView.setAdapter(ageAdapter);
+        //init distance menu
+        final ListView distanceView = new ListView(this);
+        distanceView.setDividerHeight(0);
+        distanceAdapter = new DistanceAdapter(this, Arrays.asList(distance),this);
+        distanceView.setAdapter(distanceAdapter);
 
-        //init sex menu
-        final ListView sexView = new ListView(this);
-        sexView.setDividerHeight(0);
-        sexAdapter = new TimeAdapter(this, Arrays.asList(time),this);
-        sexView.setAdapter(sexAdapter);
+        //init time menu
+        final ListView timeView = new ListView(this);
+        timeView.setDividerHeight(0);
+        timeAdapter = new TimeAdapter(this, Arrays.asList(time),this);
+        timeView.setAdapter(timeAdapter);
 
         //init popupViews
-        popupViews.add(cityView);
-        popupViews.add(ageView);
-        popupViews.add(sexView);
+        popupViews.add(typeView);
+        popupViews.add(distanceView);
+        popupViews.add(timeView);
         //popupViews.add(constellationView);
 
         //add item click event
-        cityView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        typeView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                cityAdapter.setCheckItem(position);
+                typeAdapter.setCheckItem(position);
                 mDropDownMenu.setTabText(position == 0 ? headers[0] : activities[position]);
                 mDropDownMenu.closeMenu();
             }
         });
 
-        ageView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        distanceView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ageAdapter.setCheckItem(position);
+                distanceAdapter.setCheckItem(position);
                 mDropDownMenu.setTabText(position == 0 ? headers[1] : distance[position]);
                 mDropDownMenu.closeMenu();
             }
         });
 
-        sexView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        timeView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                sexAdapter.setCheckItem(position);
+                timeAdapter.setCheckItem(position);
                 mDropDownMenu.setTabText(position == 0 ? headers[2] : time[position]);
                 mDropDownMenu.closeMenu();
             }
@@ -310,10 +310,11 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
             }
         });
 
-        //init dropdownview
+        //初始化筛选菜单
         mDropDownMenu.setDropDownMenu(Arrays.asList(headers), popupViews, listView);
     }
 
+    //选择类型后重新加载listview
     @Override
     public void onClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
@@ -363,6 +364,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         mDropDownMenu.closeMenu();
     }
 
+    //选择距离范围后重新加载listview
     @Override
     public void onDistanceClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
@@ -428,6 +430,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         mDropDownMenu.closeMenu();
     }
 
+    //选择时间范围后重新加载listview
     @Override
     public void onTimeClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
@@ -484,6 +487,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         mDropDownMenu.closeMenu();
     }
 
+    //baidu定位监听器
     public class MyLocationListener implements BDLocationListener {
 
         @Override
@@ -557,13 +561,48 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         }
     }
 
+
+    // 选择地址后重新加载listview
     @Override
     protected void onActivityResult(int requestCode,int resultCode,Intent data){
         super.onActivityResult(requestCode,resultCode,data);
-        System.out.println(requestCode);
-        System.out.println(resultCode);
         if(requestCode==1){
             curLocation.setText(data.getStringExtra("city"));
+            float longitude = Float.parseFloat(data.getStringExtra("longitude"));
+            float latitude = Float.parseFloat(data.getStringExtra("latitude"));
+            ActivityService activityService = RestService.create(ActivityService.class);
+            final Call<ActivityIndexModel> call = activityService.activity(longitude,latitude,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
+            RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
+                @Override
+                public void onResponse(ActivityIndexModel result) {
+                    //虚拟数据
+                    ActivityIndexModel model = new ActivityIndexModel();
+
+                    ActivityIndexModel.Act act2 = model.new Act();
+                    act2.setName("活动2");
+                    act2.setArea("广东东莞");
+                    act2.setBeginTime("2012");
+                    act2.setDistance("10km");
+                    act2.setIsCost("1");
+                    act2.setJoin_nums(50);
+                    act2.setActNums(0);
+
+                    //添加数据
+                    List<ActivityIndexModel.Act> list = new ArrayList<>();
+                    list.add(act2);
+
+
+                    //listView = new ListView(this);
+                    ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
+                    listView.setAdapter(null);
+                    listView.setAdapter(activityAdapter);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    System.out.println("no");
+                }
+            });
         }
     }
 }

@@ -41,6 +41,7 @@ public class DetailActivity extends AppCompatActivity {
 
             @Override
             public void onError(Throwable throwable) {
+                // 访问出错页面
                 html.setText(Html.fromHtml("<html>\n" +
                         "\n" +
                         "<head>\n" +

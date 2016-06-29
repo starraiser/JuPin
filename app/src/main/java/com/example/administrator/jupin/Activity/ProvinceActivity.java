@@ -43,6 +43,7 @@ public class ProvinceActivity extends AppCompatActivity {
         RestService.execute(call, new RestService.Callback<AreaModel>() {
             @Override
             public void onResponse(final AreaModel result) {
+                //省份列表
                 for(int i=0;i<result.getData().size();i++){
                     province.add(result.getData().get(i).getNAME());
                 }
@@ -61,6 +62,7 @@ public class ProvinceActivity extends AppCompatActivity {
 
             @Override
             public void onError(Throwable throwable) {
+                //虚拟数据
                 for(int i=0;i<10;i++){
                     province.add("广东");
                 }
@@ -89,6 +91,8 @@ public class ProvinceActivity extends AppCompatActivity {
         if(requestCode==1){
             Intent intent = new Intent();
             intent.putExtra("city",data.getStringExtra("city"));
+            intent.putExtra("longitude",data.getStringExtra("longitude"));
+            intent.putExtra("latitude",data.getStringExtra("latitude"));
             setResult(1,intent);
             finish();
         }

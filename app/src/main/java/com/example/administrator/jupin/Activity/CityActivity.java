@@ -29,15 +29,18 @@ public class CityActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_city);
 
+        //从上级activity获取省份
         listView = (ListView)findViewById(R.id.city_list);
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         final int provincePosition = bundle.getInt("position");
+
         ActivityService activityService = RestService.create(ActivityService.class);
         final Call<AreaModel> call = activityService.area("1");
         RestService.execute(call, new RestService.Callback<AreaModel>() {
             @Override
             public void onResponse(final AreaModel result) {
+                // 城市列表
                 for(int i=0;i<result.getData().get(provincePosition).getCitys().size();i++){
                     city.add(result.getData().get(provincePosition).getCitys().get(i).getNAME());
                 }
@@ -47,6 +50,8 @@ public class CityActivity extends AppCompatActivity {
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Intent intent = new Intent();
                         intent.putExtra("city",result.getData().get(provincePosition).getCitys().get(position).getNAME());
+                        intent.putExtra("longitude",result.getData().get(provincePosition).getCitys().get(position).getLONGITUDE());
+                        intent.putExtra("latitude",result.getData().get(provincePosition).getCitys().get(position).getLATITUDE());
                         setResult(1,intent);
                         finish();
                     }
@@ -55,6 +60,7 @@ public class CityActivity extends AppCompatActivity {
 
             @Override
             public void onError(Throwable throwable) {
+                // 虚拟数据
                 for(int i=0;i<10;i++){
                     city.add("东莞");
                 }
@@ -64,6 +70,8 @@ public class CityActivity extends AppCompatActivity {
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Intent intent = new Intent();
                         intent.putExtra("city","东莞");
+                        intent.putExtra("longitude","116.422773");
+                        intent.putExtra("latitude","39.934772");
                         setResult(1,intent);
                         finish();
                     }
