@@ -48,8 +48,8 @@ public class DetailActivity extends AppCompatActivity {
                         "</head>\n" +
                         "\n" +
                         "<body>\n" +
-                        "<p>body 访问出错。</p>\n" +
-                        "<p>title 访问出错。</p>\n" +
+                        "<p> 用户未登录。</p>\n" +
+                        "<p> 无法访问。</p>\n" +
                         "</body>\n" +
                         "\n" +
                         "</html>"));
