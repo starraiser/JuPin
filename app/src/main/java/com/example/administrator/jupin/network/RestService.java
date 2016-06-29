@@ -1,4 +1,4 @@
-package com.example.administrator.jupin;
+package com.example.administrator.jupin.network;
 
 
 import android.util.Log;
@@ -12,6 +12,8 @@ import android.util.Log;
 //import com.menda.dayijr.util.NetworkUtils;
 //import com.menda.dayijr.util.UIUtils;
 
+import com.example.administrator.jupin.BuildConfig;
+import com.example.administrator.jupin.Constant;
 import com.example.administrator.jupin.model.BizResult;
 
 import java.io.IOException;

@@ -1,5 +1,6 @@
 package com.example.administrator.jupin.Activity;
 
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -17,9 +18,9 @@ import com.example.administrator.jupin.adapter.ActivityAdapter;
 import com.example.administrator.jupin.adapter.DistanceAdapter;
 import com.example.administrator.jupin.adapter.GirdDropDownAdapter;
 import com.example.administrator.jupin.R;
-import com.example.administrator.jupin.RestService;
+import com.example.administrator.jupin.network.RestService;
 import com.example.administrator.jupin.adapter.TimeAdapter;
-import com.example.administrator.jupin.api.ActivityService;
+import com.example.administrator.jupin.network.api.ActivityService;
 import com.example.administrator.jupin.model.ActivityIndexModel;
 import com.yyydjk.library.DropDownMenu;
 
@@ -59,13 +60,11 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
     private List<View> popupViews = new ArrayList<>();
 
-    LocationManager locationManager;
-    LocationListener locationListener;
-    Location currentLocation;
     private TextView curLocation;
 
     public LocationClient mLocationClient = null;
     public BDLocationListener myListener = new MyLocationListener();
+    private BDLocation bdLocation;
 
 
     @Override
@@ -74,36 +73,13 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         setContentView(R.layout.activity_main);
 
         curLocation = (TextView)findViewById(R.id.location);
-
-        locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
-        locationListener = new LocationListener() {
+        curLocation.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onLocationChanged(Location location) {
-                currentLocation = location;
+            public void onClick(View v) {
+                startActivityForResult(new Intent(MainActivity.this,ProvinceActivity.class),1);
             }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-        try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-        }catch (SecurityException e){
-            e.printStackTrace();
-            Toast toast = Toast.makeText(this,e.getMessage(),Toast.LENGTH_SHORT);
-            toast.show();
-        }
+        });
+        //定位
         mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
         mLocationClient.registerLocationListener( myListener );    //注册监听函数
         LocationClientOption option = new LocationClientOption();
@@ -312,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         act5.setActNums(0);
 
         //添加数据
-        List<ActivityIndexModel.Act> list = new ArrayList<>();
+        final List<ActivityIndexModel.Act> list = new ArrayList<>();
         list.add(act);
         list.add(act2);
         list.add(act3);
@@ -323,6 +299,16 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
         listView.setVerticalScrollBarEnabled(false);
         listView.setAdapter(activityAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this,DetailActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("id",list.get(position).getId());
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
 
         //init dropdownview
         mDropDownMenu.setDropDownMenu(Arrays.asList(headers), popupViews, listView);
@@ -331,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
     @Override
     public void onClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
+        final Call<ActivityIndexModel> call = activityService.activity((float) bdLocation.getLongitude(),(float) bdLocation.getLatitude(),0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
         RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
             @Override
@@ -380,7 +366,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
     @Override
     public void onDistanceClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
+        final Call<ActivityIndexModel> call = activityService.activity((float) bdLocation.getLongitude(),(float) bdLocation.getLatitude(),0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
         RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
             @Override
@@ -445,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
     @Override
     public void onTimeClick(final String str) {
         ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
+        final Call<ActivityIndexModel> call = activityService.activity((float) bdLocation.getLongitude(),(float) bdLocation.getLatitude(),0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
         RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
             @Override
@@ -527,8 +513,10 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
                 sb.append(location.getAddrStr());
                 sb.append("\ndescribe : ");
                 sb.append("gps定位成功");
+                curLocation.setText(location.getCity());
 
             } else if (location.getLocType() == BDLocation.TypeNetWorkLocation) {// 网络定位结果
+                bdLocation = location;
                 sb.append("\naddr : ");
                 sb.append(location.getAddrStr());
                 //运营商信息
@@ -543,11 +531,14 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
                 sb.append("离线定位成功，离线定位结果也是有效的");
             } else if (location.getLocType() == BDLocation.TypeServerError) {
                 sb.append("\ndescribe : ");
+                curLocation.setText("定位失败");
                 sb.append("服务端网络定位失败，可以反馈IMEI号和大体定位时间到loc-bugs@baidu.com，会有人追查原因");
             } else if (location.getLocType() == BDLocation.TypeNetWorkException) {
+                curLocation.setText("定位失败");
                 sb.append("\ndescribe : ");
                 sb.append("网络不同导致定位失败，请检查网络是否通畅");
             } else if (location.getLocType() == BDLocation.TypeCriteriaException) {
+                curLocation.setText("定位失败");
                 sb.append("\ndescribe : ");
                 sb.append("无法获取有效定位依据导致定位失败，一般是由于手机的原因，处于飞行模式下一般会造成这种结果，可以试着重启手机");
             }
@@ -563,6 +554,16 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
                 }
             }
             Log.i("BaiduLocationApiDem", sb.toString());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode,int resultCode,Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        System.out.println(requestCode);
+        System.out.println(resultCode);
+        if(requestCode==1){
+            curLocation.setText(data.getStringExtra("city"));
         }
     }
 }

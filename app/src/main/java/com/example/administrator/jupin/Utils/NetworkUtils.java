@@ -1,4 +1,4 @@
-package com.example.administrator.jupin;
+package com.example.administrator.jupin.Utils;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
