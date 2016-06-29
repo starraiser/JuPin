@@ -1,28 +1,21 @@
 package com.example.administrator.jupin.Activity;
 
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.administrator.jupin.adapter.ActivityAdapter;
-import com.example.administrator.jupin.adapter.ConstellationAdapter;
 import com.example.administrator.jupin.adapter.DistanceAdapter;
-import com.example.administrator.jupin.adapter.FilterAdapter;
 import com.example.administrator.jupin.adapter.GirdDropDownAdapter;
-import com.example.administrator.jupin.adapter.ListDropDownAdapter;
 import com.example.administrator.jupin.R;
 import com.example.administrator.jupin.RestService;
 import com.example.administrator.jupin.adapter.TimeAdapter;
@@ -32,264 +25,186 @@ import com.yyydjk.library.DropDownMenu;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.Poi;
 
 import retrofit2.Call;
 
 public class MainActivity extends AppCompatActivity implements GirdDropDownAdapter.ScreenCallback,TimeAdapter.TimeScreenCallback,DistanceAdapter.DistanceScreenCallback{
 
-    private int[] location = new int[2];
     ListView listView;
 
+    //筛选菜单
     private String headers[] = {"全部活动","距离","时间"};
     private String activities[] = {"全部活动", "校园招聘", "教育培训"};
     private String distance[] = {"不限", "10公里以内", "20公里以内", "30公里以内"};
     private String time[] = {"不限", "3天以内", "5天以内","7天以内"};
-    //private String constellations[] = {"不限", "白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座", "射手座", "摩羯座", "水瓶座", "双鱼座"};
+
+    //筛选菜单适配器
     private GirdDropDownAdapter cityAdapter;
     private DistanceAdapter ageAdapter;
     private TimeAdapter sexAdapter;
-    private String actCondition= "0";
-    private String disCondition= "0";
-    private String timeCondition= "0";
-//    private ConstellationAdapter constellationAdapter;
-//    private int constellationPosition = 0;
-
-    private RelativeLayout choose_type;
-    private RelativeLayout choose_dis;
-    private RelativeLayout choose_time;
-
-    private View mask;
 
     private DropDownMenu mDropDownMenu;
 
+    //筛选条件
     private int actPosition = 0;
     private int disPosition = 0;
     private int timePosition = 0;
 
     private List<View> popupViews = new ArrayList<>();
 
+    LocationManager locationManager;
+    LocationListener locationListener;
+    Location currentLocation;
+    private TextView curLocation;
+
+    public LocationClient mLocationClient = null;
+    public BDLocationListener myListener = new MyLocationListener();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        choose_type = (RelativeLayout)findViewById(R.id.choose_type);
-//        choose_dis = (RelativeLayout)findViewById(R.id.choose_dis);
-//        choose_time = (RelativeLayout)findViewById(R.id.choose_time);
+        curLocation = (TextView)findViewById(R.id.location);
 
-        //mask = (View)findViewById(R.id.mask);
+        locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                currentLocation = location;
+            }
 
-//        choose_type.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                List<String> list = new ArrayList<String>();
-//                list.add("全部活动");
-//                list.add("校园招聘");
-//                list.add("教育培训");
-//                showPopupWindow(v,list,0);
-//
-//                mDropDownMenu = (DropDownMenu)findViewById(R.id.dropDownMenu);
-//                final ListView  cityView = new ListView(MainActivity.this);
-//                FilterAdapter adapter = new FilterAdapter(MainActivity.this,list,0);
-//                cityView.setAdapter(adapter);
-//            }
-//        });
-//
-//        choose_dis.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                List<String> list = new ArrayList<String>();
-//                list.add("不限");
-//                list.add("10公里以内");
-//                list.add("20公里以内");
-//                list.add("30公里以内");
-//                list.add("50公里以内");
-//                showPopupWindow(v,list,1);
-//            }
-//        });
-//
-//        choose_time.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                List<String> list = new ArrayList<String>();
-//                list.add("不限");
-//                list.add("3天以内");
-//                list.add("7天以内");
-//                list.add("15天以内");
-//                showPopupWindow(v,list,2);
-//            }
-//        });
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
 
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+        try {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        }catch (SecurityException e){
+            e.printStackTrace();
+            Toast toast = Toast.makeText(this,e.getMessage(),Toast.LENGTH_SHORT);
+            toast.show();
+        }
+        mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
+        mLocationClient.registerLocationListener( myListener );    //注册监听函数
+        LocationClientOption option = new LocationClientOption();
+        option.setIsNeedAddress(true);
+        mLocationClient.setLocOption(option);
+        mLocationClient.start();
         initView();
-//        List<String> list = new ArrayList<String>();
-//        list.add("全部活动");
-//        list.add("校园招聘");
-//        list.add("教育培训");
+    }
+
+    private void initLocation(){
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy
+        );//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
+        option.setCoorType("bd09ll");//可选，默认gcj02，设置返回的定位结果坐标系
+        int span=1000;
+        option.setScanSpan(span);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
+        option.setIsNeedAddress(true);//可选，设置是否需要地址信息，默认不需要
+        option.setOpenGps(true);//可选，默认false,设置是否使用gps
+        option.setLocationNotify(true);//可选，默认false，设置是否当gps有效时按照1S1次频率输出GPS结果
+        option.setIsNeedLocationDescribe(true);//可选，默认false，设置是否需要位置语义化结果，可以在BDLocation.getLocationDescribe里得到，结果类似于“在北京天安门附近”
+        option.setIsNeedLocationPoiList(true);//可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
+        option.setIgnoreKillProcess(false);//可选，默认true，定位SDK内部是一个SERVICE，并放到了独立进程，设置是否在stop的时候杀死这个进程，默认不杀死
+        option.SetIgnoreCacheException(false);//可选，默认false，设置是否收集CRASH信息，默认收集
+        option.setEnableSimulateGps(false);//可选，默认false，设置是否需要过滤gps仿真结果，默认需要
+        mLocationClient.setLocOption(option);
+    }
+
+//    private void showPopupWindow(View view, List<String> listdata, final int type){  // 弹窗
+//        View contentView = LayoutInflater.from(this).inflate(R.layout.pop_window,null);
+//        final PopupWindow popupWindow = new PopupWindow(contentView,
+//                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,true);
+//        WindowManager.LayoutParams params=MainActivity.this.getWindow().getAttributes();
+//        params.alpha=0.7f;
 //
-//        mDropDownMenu = (DropDownMenu)findViewById(R.id.dropDownMenu);
-//        final ListView  cityView = new ListView(MainActivity.this);
-//        FilterAdapter adapter = new FilterAdapter(MainActivity.this,list,0);
-//        cityView.setAdapter(adapter);
-//        popupViews.add(cityView);
+//        MainActivity.this.getWindow().setAttributes(params);
+//        //mask.setVisibility(View.VISIBLE);
 //
-//        TextView contentView = new TextView(this);
-//        contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-//        contentView.setText("内容显示区域");
-//        contentView.setGravity(Gravity.CENTER);
-//        contentView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+//        WindowManager wm = this.getWindowManager();
+//        int width = wm.getDefaultDisplay().getWidth();
+//        final ListView listView = (ListView)contentView.findViewById(R.id.grouplist);
 //
-//        mDropDownMenu.setDropDownMenu(Arrays.asList(headers), popupViews, contentView);
-    }
-
-    public void showWithoutLimit(){
-        ActivityService activityService = RestService.create(ActivityService.class);
-        //final Call<ActivityIndexModel> call = accountService.fund(114.171994f,22.281089f,0,10);
-        final Call<ActivityIndexModel> call = activityService.area("f");
-        RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
-            @Override
-            public void onResponse(ActivityIndexModel result) {
-                Toast toast = Toast.makeText(MainActivity.this,result.getStatecode(),Toast.LENGTH_SHORT);
-                toast.show();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("no");
-            }
-        });
-    }
-
-    public void showWithType(String type){
-        ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activityWithType(114.171994f,22.281089f,0,10,type);
-        //final Call<ActivityIndexModel> call = activityService.area("f");
-        RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
-            @Override
-            public void onResponse(ActivityIndexModel result) {
-                Toast toast = Toast.makeText(MainActivity.this,result.getStatecode(),Toast.LENGTH_SHORT);
-                toast.show();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("no");
-            }
-        });
-    }
-
-    public void showWithDistance(String distance){
-        ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activityWithDistance(114.171994f,22.281089f,0,10,distance);
-        //final Call<ActivityIndexModel> call = activityService.area("f");
-        RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
-            @Override
-            public void onResponse(ActivityIndexModel result) {
-                Toast toast = Toast.makeText(MainActivity.this,result.getStatecode(),Toast.LENGTH_SHORT);
-                toast.show();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("no");
-            }
-        });
-    }
-
-    public void showWithTime(String time){
-        ActivityService activityService = RestService.create(ActivityService.class);
-        final Call<ActivityIndexModel> call = activityService.activityWithTime(114.171994f,22.281089f,0,10,time);
-        //final Call<ActivityIndexModel> call = activityService.area("f");
-        RestService.execute(call, new RestService.Callback<ActivityIndexModel>() {
-            @Override
-            public void onResponse(ActivityIndexModel result) {
-                Toast toast = Toast.makeText(MainActivity.this,result.getStatecode(),Toast.LENGTH_SHORT);
-                toast.show();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("no");
-            }
-        });
-    }
-
-    private void showPopupWindow(View view, List<String> listdata, final int type){  // 弹窗
-        View contentView = LayoutInflater.from(this).inflate(R.layout.pop_window,null);
-        final PopupWindow popupWindow = new PopupWindow(contentView,
-                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,true);
-        WindowManager.LayoutParams params=MainActivity.this.getWindow().getAttributes();
-        params.alpha=0.7f;
-
-        MainActivity.this.getWindow().setAttributes(params);
-        //mask.setVisibility(View.VISIBLE);
-
-        WindowManager wm = this.getWindowManager();
-        int width = wm.getDefaultDisplay().getWidth();
-        final ListView listView = (ListView)contentView.findViewById(R.id.grouplist);
-
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        for (int i = 0; i < listdata.size(); i++) {
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("groupName", listdata.get(i));
-            list.add(map);
-        }
-
-        int tmp = 0;
-        if (type == 0) {
-            tmp = actPosition;
-        }
-        if (type == 1) {
-            tmp = disPosition;
-        }
-        if (type == 2) {
-            tmp = timePosition;
-        }
-        final FilterAdapter adapter = new FilterAdapter(MainActivity.this,listdata,tmp);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(type == 0){
-                    actPosition = position;
-                }
-                if(type == 1){
-                    disPosition = position;
-                }
-                if(type == 2){
-                    timePosition = position;
-                }
-                listView.setAdapter(null);
-                popupWindow.dismiss();
-            }
-        });
-
-        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                WindowManager.LayoutParams params=MainActivity.this.getWindow().getAttributes();
-                params.alpha=1f;
-                listView.setAdapter(null);
-                //mask.setVisibility(View.GONE);
-                MainActivity.this.getWindow().setAttributes(params);
-
-            }
-        });
-
-        choose_type.getLocationOnScreen(location);
-
-        popupWindow.setTouchable(true);  // 设置弹出窗口
-        popupWindow.setFocusable(true);
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#fff9f9")));
-        popupWindow.setWidth(width);
-        popupWindow.showAtLocation(choose_type, Gravity.NO_GRAVITY,location[0] - choose_type.getWidth(), location[1] + choose_type.getMeasuredHeight()+(choose_type.getHeight()-choose_type.getHeight())/2);
-        popupWindow.showAsDropDown(view);
-
-
-    }
+//        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+//        for (int i = 0; i < listdata.size(); i++) {
+//            Map<String, Object> map = new HashMap<String, Object>();
+//            map.put("groupName", listdata.get(i));
+//            list.add(map);
+//        }
+//
+//        int tmp = 0;
+//        if (type == 0) {
+//            tmp = actPosition;
+//        }
+//        if (type == 1) {
+//            tmp = disPosition;
+//        }
+//        if (type == 2) {
+//            tmp = timePosition;
+//        }
+//        final FilterAdapter adapter = new FilterAdapter(MainActivity.this,listdata,tmp);
+//        listView.setAdapter(adapter);
+//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                if(type == 0){
+//                    actPosition = position;
+//                }
+//                if(type == 1){
+//                    disPosition = position;
+//                }
+//                if(type == 2){
+//                    timePosition = position;
+//                }
+//                listView.setAdapter(null);
+//                popupWindow.dismiss();
+//            }
+//        });
+//
+//        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+//            @Override
+//            public void onDismiss() {
+//                WindowManager.LayoutParams params=MainActivity.this.getWindow().getAttributes();
+//                params.alpha=1f;
+//                listView.setAdapter(null);
+//                //mask.setVisibility(View.GONE);
+//                MainActivity.this.getWindow().setAttributes(params);
+//
+//            }
+//        });
+//
+//        choose_type.getLocationOnScreen(location);
+//
+//        popupWindow.setTouchable(true);  // 设置弹出窗口
+//        popupWindow.setFocusable(true);
+//        popupWindow.setOutsideTouchable(true);
+//        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#fff9f9")));
+//        popupWindow.setWidth(width);
+//        popupWindow.showAtLocation(choose_type, Gravity.NO_GRAVITY,location[0] - choose_type.getWidth(), location[1] + choose_type.getMeasuredHeight()+(choose_type.getHeight()-choose_type.getHeight())/2);
+//        popupWindow.showAsDropDown(view);
+//
+//
+//    }
 
     private void initView() {
         mDropDownMenu = (DropDownMenu)findViewById(R.id.dropDownMenu);
@@ -310,20 +225,6 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         sexView.setDividerHeight(0);
         sexAdapter = new TimeAdapter(this, Arrays.asList(time),this);
         sexView.setAdapter(sexAdapter);
-
-        //init constellation
-//        final View constellationView = getLayoutInflater().inflate(R.layout.custom_layout, null);
-//        GridView constellation = (GridView) constellationView.findViewById(R.id.constellation);
-//        constellationAdapter = new ConstellationAdapter(this, Arrays.asList(constellations));
-//        constellation.setAdapter(constellationAdapter);
-//        TextView ok = (TextView) constellationView.findViewById(R.id.ok);
-//        ok.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                mDropDownMenu.setTabText(constellationPosition == 0 ? headers[3] : constellations[constellationPosition]);
-//                mDropDownMenu.closeMenu();
-//            }
-//        });
 
         //init popupViews
         popupViews.add(cityView);
@@ -358,14 +259,6 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
                 mDropDownMenu.closeMenu();
             }
         });
-
-//        constellation.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                constellationAdapter.setCheckItem(position);
-//                constellationPosition = position;
-//            }
-//        });
 
         //init context view
         listView = new ListView(this);
@@ -428,11 +321,8 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
         listView = new ListView(this);
         ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
+        listView.setVerticalScrollBarEnabled(false);
         listView.setAdapter(activityAdapter);
-//        contentView.setText("内容显示区域");
-//        contentView.setGravity(Gravity.CENTER);
-//        contentView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
-
 
         //init dropdownview
         mDropDownMenu.setDropDownMenu(Arrays.asList(headers), popupViews, listView);
@@ -440,37 +330,6 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
     @Override
     public void onClick(final String str) {
-//        if(str.equals("全部活动")){
-//            actPosition=0;
-//        }
-//        if(str.equals("校园招聘")){
-//            actPosition=1;
-//        }
-//        if(str.equals("教育培训")){
-//            actPosition=2;
-//        }
-//        System.out.println(actPosition + "   "+disPosition+"   "+timePosition);
-//
-//        //虚拟数据
-//        ActivityIndexModel model2 = new ActivityIndexModel();
-//        ActivityIndexModel.Act act = model2.new Act();
-//        act.setName("活动");
-//        act.setArea("广东东莞");
-//        act.setBeginTime("2012");
-//        act.setDistance("10km");
-//        act.setIsCost("0");
-//        act.setJoin_nums(50);
-//        act.setActNums(100);
-//
-//        //添加数据
-//        List<ActivityIndexModel.Act> list = new ArrayList<>();
-//        list.add(act);
-//
-//        listView = new ListView(this);
-//        ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
-//        listView.setAdapter(null);
-//        listView.setAdapter(activityAdapter);
-
         ActivityService activityService = RestService.create(ActivityService.class);
         final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
@@ -520,50 +379,6 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
     @Override
     public void onDistanceClick(final String str) {
-//        if(str.equals("不限")){
-//            disPosition=0;
-//        }
-//        if(str.equals("10公里以内")){
-//            disPosition=1;
-//        }
-//        if(str.equals("20公里以内")){
-//            disPosition=2;
-//        }
-//        if(str.equals("30公里以内")){
-//            disPosition=3;
-//        }
-//        System.out.println(actPosition + "   "+disPosition+"   "+timePosition);
-//
-//        //虚拟数据
-//        ActivityIndexModel model = new ActivityIndexModel();
-//        ActivityIndexModel.Act act = model.new Act();
-//        act.setName("活动");
-//        act.setArea("广东东莞");
-//        act.setBeginTime("2012");
-//        act.setDistance("10km");
-//        act.setIsCost("0");
-//        act.setJoin_nums(50);
-//        act.setActNums(100);
-//
-//        ActivityIndexModel.Act act2 = model.new Act();
-//        act2.setName("活动2");
-//        act2.setArea("广东东莞");
-//        act2.setBeginTime("2012");
-//        act2.setDistance("10km");
-//        act2.setIsCost("1");
-//        act2.setJoin_nums(50);
-//        act2.setActNums(0);
-//
-//        //添加数据
-//        List<ActivityIndexModel.Act> list = new ArrayList<>();
-//        list.add(act);
-//        list.add(act2);
-//
-//        listView = new ListView(this);
-//        ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
-//        listView.setAdapter(null);
-//        listView.setAdapter(activityAdapter);
-
         ActivityService activityService = RestService.create(ActivityService.class);
         final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
@@ -629,43 +444,6 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
 
     @Override
     public void onTimeClick(final String str) {
-//        if(str.equals("不限")){
-//            timePosition=0;
-//        }
-//        if(str.equals("3天以内")){
-//            timePosition=1;
-//        }
-//        if(str.equals("7天以内")){
-//            timePosition=2;
-//        }
-//        if(str.equals("15天以内")){
-//            timePosition=3;
-//        }
-//        System.out.println(actPosition + "   "+disPosition+"   "+timePosition);
-//
-//        //虚拟数据
-//        ActivityIndexModel model = new ActivityIndexModel();
-//
-//        ActivityIndexModel.Act act2 = model.new Act();
-//        act2.setName("活动2");
-//        act2.setArea("广东东莞");
-//        act2.setBeginTime("2012");
-//        act2.setDistance("10km");
-//        act2.setIsCost("1");
-//        act2.setJoin_nums(50);
-//        act2.setActNums(0);
-//
-//        //添加数据
-//        List<ActivityIndexModel.Act> list = new ArrayList<>();
-//        list.add(act2);
-//
-//
-//        listView = new ListView(this);
-//        ActivityAdapter activityAdapter = new ActivityAdapter(MainActivity.this,list);
-//        listView.setAdapter(null);
-//        listView.setAdapter(activityAdapter);
-
-
         ActivityService activityService = RestService.create(ActivityService.class);
         final Call<ActivityIndexModel> call = activityService.activity(114.171994f,22.281089f,0,10,String.valueOf(actPosition),String.valueOf(disPosition),String.valueOf(timePosition));
         //final Call<ActivityIndexModel> call = activityService.area("f");
@@ -718,5 +496,73 @@ public class MainActivity extends AppCompatActivity implements GirdDropDownAdapt
         });
 
         mDropDownMenu.closeMenu();
+    }
+
+    public class MyLocationListener implements BDLocationListener {
+
+        @Override
+        public void onReceiveLocation(BDLocation location) {
+            //Receive Location
+            StringBuffer sb = new StringBuffer(256);
+            sb.append("time : ");
+            sb.append(location.getTime());
+            sb.append("\nerror code : ");
+            sb.append(location.getLocType());
+            sb.append("\nlatitude : ");
+            sb.append(location.getLatitude());
+            sb.append("\nlontitude : ");
+            sb.append(location.getLongitude());
+            sb.append("\nradius : ");
+            sb.append(location.getRadius());
+            if (location.getLocType() == BDLocation.TypeGpsLocation) {// GPS定位结果
+                sb.append("\nspeed : ");
+                sb.append(location.getSpeed());// 单位：公里每小时
+                sb.append("\nsatellite : ");
+                sb.append(location.getSatelliteNumber());
+                sb.append("\nheight : ");
+                sb.append(location.getAltitude());// 单位：米
+                sb.append("\ndirection : ");
+                sb.append(location.getDirection());// 单位度
+                sb.append("\naddr : ");
+                sb.append(location.getAddrStr());
+                sb.append("\ndescribe : ");
+                sb.append("gps定位成功");
+
+            } else if (location.getLocType() == BDLocation.TypeNetWorkLocation) {// 网络定位结果
+                sb.append("\naddr : ");
+                sb.append(location.getAddrStr());
+                //运营商信息
+                sb.append("\noperationers : ");
+                curLocation.setText(location.getCity());
+                sb.append(location.getCity());
+                sb.append(location.getOperators());
+                sb.append("\ndescribe : ");
+                sb.append("网络定位成功");
+            } else if (location.getLocType() == BDLocation.TypeOffLineLocation) {// 离线定位结果
+                sb.append("\ndescribe : ");
+                sb.append("离线定位成功，离线定位结果也是有效的");
+            } else if (location.getLocType() == BDLocation.TypeServerError) {
+                sb.append("\ndescribe : ");
+                sb.append("服务端网络定位失败，可以反馈IMEI号和大体定位时间到loc-bugs@baidu.com，会有人追查原因");
+            } else if (location.getLocType() == BDLocation.TypeNetWorkException) {
+                sb.append("\ndescribe : ");
+                sb.append("网络不同导致定位失败，请检查网络是否通畅");
+            } else if (location.getLocType() == BDLocation.TypeCriteriaException) {
+                sb.append("\ndescribe : ");
+                sb.append("无法获取有效定位依据导致定位失败，一般是由于手机的原因，处于飞行模式下一般会造成这种结果，可以试着重启手机");
+            }
+            sb.append("\nlocationdescribe : ");
+            sb.append(location.getLocationDescribe());// 位置语义化信息
+            List<Poi> list = location.getPoiList();// POI数据
+            if (list != null) {
+                sb.append("\npoilist size = : ");
+                sb.append(list.size());
+                for (Poi p : list) {
+                    sb.append("\npoi= : ");
+                    sb.append(p.getId() + " " + p.getName() + " " + p.getRank());
+                }
+            }
+            Log.i("BaiduLocationApiDem", sb.toString());
+        }
     }
 }
